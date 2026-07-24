@@ -4,8 +4,9 @@ import { Calendar } from './Calendar';
 import { getAppointments, getBlockedSlots, saveAppointment, TIME_SLOTS } from '../store';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { LogOut, CheckCircle2, User as UserIcon, Calendar as CalendarIcon, Clock, MapPin, CreditCard, Info, X } from 'lucide-react';
+import { LogOut, CheckCircle2, User as UserIcon, Calendar as CalendarIcon, Clock, MapPin, CreditCard, Info, X, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { motion } from 'motion/react';
 
 export function ClientInterface() {
   const [user, setUser] = useState<User | null>(null);
@@ -180,7 +181,6 @@ export function ClientInterface() {
     if (name.trim() && parsedDob && phone.trim()) {
       setDob(parsedDob);
       setUser({ name, dob: parsedDob, phone });
-      setShowInfoModal(true);
     }
   };
 
@@ -199,40 +199,45 @@ export function ClientInterface() {
     
     await saveAppointment(newAppointment);
     setBookingSuccess(true);
-    setSelectedTime(null);
   };
 
   const resetBooking = () => {
     setBookingSuccess(false);
     setSelectedDate(null);
     setSelectedTime(null);
+    setUser(null);
+    setName('');
+    setDob('');
+    setDobText('');
+    setDobError('');
+    setPhone('');
   };
 
   // Login View
   if (!user) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 w-full max-w-md">
-          <div className="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <UserIcon size={32} />
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-stone-100 w-full max-w-md">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <UserIcon size={24} className="sm:w-8 sm:h-8" />
           </div>
-          <h1 className="text-2xl font-semibold text-center text-stone-800 mb-2">Portal del Paciente</h1>
-          <p className="text-stone-500 text-center mb-8">Ingresa tus datos para agendar una cita dermatológica.</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-center text-stone-800 mb-1">Reserva tu cita</h1>
+          <p className="text-stone-500 text-xs sm:text-sm text-center mb-5 sm:mb-8">Ingresa tus datos para agendar una cita dermatológica.</p>
           
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Nombre Completo</label>
+              <label className="block text-xs sm:text-sm font-medium text-stone-700 mb-0.5 sm:mb-1">Nombre Completo</label>
               <input 
                 type="text" 
                 required
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors text-sm"
                 placeholder="Ej. Ana García"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Fecha de Nacimiento</label>
+              <label className="block text-xs sm:text-sm font-medium text-stone-700 mb-0.5 sm:mb-1">Fecha de Nacimiento</label>
               <div className="relative">
                 <input 
                   type="text" 
@@ -241,7 +246,7 @@ export function ClientInterface() {
                   onChange={handleDobTextChange}
                   maxLength={10}
                   className={cn(
-                    "w-full pl-4 pr-12 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors",
+                    "w-full pl-3 sm:pl-4 pr-12 py-2 sm:py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors text-sm",
                     dobError && "border-red-300 focus:ring-red-500/20 focus:border-red-500"
                   )}
                   placeholder="DD/MM/AAAA"
@@ -265,27 +270,27 @@ export function ClientInterface() {
                 />
               </div>
               {dobError ? (
-                <p className="mt-1.5 text-xs text-red-500 font-medium">{dobError}</p>
+                <p className="mt-1 text-xs text-red-500 font-medium">{dobError}</p>
               ) : (
-                <p className="mt-1 text-[11px] text-stone-400">Puedes escribirla (ej. 25/08/1995) o usar el botón de calendario.</p>
+                <p className="mt-1 text-[10px] sm:text-[11px] text-stone-400">Puedes escribirla (ej. 25/08/1995) o usar el calendario.</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Teléfono</label>
+              <label className="block text-xs sm:text-sm font-medium text-stone-700 mb-0.5 sm:mb-1">Teléfono</label>
               <input 
                 type="tel" 
                 required
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors text-sm"
                 placeholder="Ej. 77712345"
               />
             </div>
             <button 
               type="submit"
-              className="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors mt-4"
+              className="w-full py-2.5 sm:py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors mt-3 sm:mt-4 text-sm"
             >
-              Ingresar
+              Continuar
             </button>
           </form>
         </div>
@@ -295,22 +300,46 @@ export function ClientInterface() {
 
   // Booking Success View
   if (bookingSuccess) {
+    const formatTimeTo12h = (timeStr: string | null) => {
+      if (!timeStr) return '';
+      const [hourStr, minuteStr] = timeStr.split(':');
+      const hour = parseInt(hourStr, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${minuteStr} ${ampm}`;
+    };
+
     return (
       <div className="min-h-screen bg-stone-50 p-4 flex items-center justify-center">
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 w-full max-w-md text-center">
           <CheckCircle2 className="w-20 h-20 text-brand-500 mx-auto mb-6" />
           <h2 className="text-2xl font-semibold text-stone-800 mb-2">¡Cita Confirmada!</h2>
-          <p className="text-stone-600 mb-8">
-            Tu cita ha sido agendada exitosamente para el <br/>
-            <span className="font-medium text-stone-800">
-              {selectedDate && format(selectedDate, "d 'de' MMMM, yyyy", { locale: es })}
-            </span>
-          </p>
+          
+          <div className="text-stone-600 mb-8 space-y-3 text-left bg-stone-50 p-6 rounded-2xl border border-stone-100">
+            <p className="font-semibold text-stone-800 mb-4 text-center text-base">Detalles de tu reserva:</p>
+            <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2">
+              <span className="text-stone-500 font-medium">Servicio:</span>
+              <span className="font-semibold text-stone-800">Consulta dermatológica</span>
+            </div>
+            <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2">
+              <span className="text-stone-500 font-medium">Fecha:</span>
+              <span className="font-semibold text-stone-800">
+                {selectedDate && format(selectedDate, "d 'de' MMMM, yyyy", { locale: es })}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-stone-500 font-medium">Hora:</span>
+              <span className="font-semibold text-stone-800">
+                {formatTimeTo12h(selectedTime)}
+              </span>
+            </div>
+          </div>
+
           <button 
             onClick={resetBooking}
             className="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors"
           >
-            Agendar otra cita
+            Finalizado
           </button>
         </div>
       </div>
@@ -333,108 +362,145 @@ export function ClientInterface() {
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
       <header className="bg-white border-b border-stone-100 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-8 sm:h-10 flex items-center justify-center">
               <img src="/logo-sm.svg" alt="Logo" className="h-full w-auto object-contain sm:hidden" />
               <img src="/logo.svg" alt="Logo" className="h-full w-auto object-contain hidden sm:block" />
             </div>
-            <span className="font-medium text-stone-800 hidden sm:block border-l border-stone-200 pl-3">Hola, {user.name.split(' ')[0]}</span>
+            <span className="font-medium text-stone-800 hidden sm:block border-l border-stone-200 pl-3 text-sm">Hola, {user.name.split(' ')[0]}</span>
           </div>
           <button 
             onClick={() => setUser(null)}
-            className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-800 transition-colors"
+            className="flex items-center gap-2 text-xs sm:text-sm text-stone-500 hover:text-stone-800 transition-colors"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
             Salir
           </button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-stone-800">Reserva tu cita</h1>
-          <p className="text-stone-500">Selecciona el día y horario que mejor se adapte a ti.</p>
+      <main className="max-w-4xl mx-auto px-4 py-3 sm:py-8">
+        <div className="mb-3 sm:mb-8">
+          <h1 className="text-lg sm:text-2xl font-semibold text-stone-800">Reserva tu cita</h1>
+          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">Selecciona la fecha y el horario que mejor se adapten a ti para tu consulta dermatológica.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 items-start">
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-8 items-start">
           {/* Calendar Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-4 text-stone-700 font-medium px-1">
-              <CalendarIcon size={18} className="text-brand-600" />
-              1. Elige un día
-            </div>
-            <Calendar 
-              selectedDate={selectedDate} 
-              onSelectDate={(date) => {
-                setSelectedDate(date);
-                setSelectedTime(null);
-              }} 
-              blockedDays={blockedDays}
-              bookedDays={bookedDays}
-            />
-          </section>
+          <div className={cn("md:block", selectedDate ? "hidden" : "block")}>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <section>
+                <div className="flex items-center gap-2 mb-2 sm:mb-4 text-stone-700 text-xs sm:text-sm font-medium px-1">
+                  <CalendarIcon size={16} className="text-brand-600" />
+                  1. Selecciona una fecha
+                </div>
+                <Calendar 
+                  selectedDate={selectedDate} 
+                  onSelectDate={(date) => {
+                    setSelectedDate(date);
+                    setSelectedTime(null);
+                  }} 
+                  blockedDays={blockedDays}
+                  bookedDays={bookedDays}
+                />
+              </section>
+            </motion.div>
+          </div>
 
           {/* Time Selection Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-4 text-stone-700 font-medium px-1">
-              <Clock size={18} className="text-brand-600" />
-              2. Elige un horario
-            </div>
-            
-            {!selectedDate ? (
-              <div className="bg-white rounded-2xl border border-stone-100 p-8 text-center text-stone-400">
-                Selecciona un día en el calendario para ver los horarios disponibles.
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-stone-100 p-6">
-                <h3 className="text-stone-800 font-medium mb-4 capitalize">
-                  {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
-                </h3>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {TIME_SLOTS.map(time => {
-                    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-                    const status = getSlotStatus(dateStr, time);
-                    const isAvailable = status === 'available';
-                    const isSelected = selectedTime === time;
-                    
-                    return (
-                      <button
-                        key={time}
-                        disabled={!isAvailable}
-                        onClick={() => setSelectedTime(time)}
-                        className={cn(
-                          "py-3 px-2 rounded-xl text-sm font-medium transition-all duration-200 border",
-                          isAvailable && !isSelected && "bg-white border-stone-200 text-stone-700 hover:border-brand-500 hover:text-brand-700",
-                          isSelected && "bg-brand-600 border-brand-600 text-white shadow-md shadow-brand-200",
-                          !isAvailable && "bg-stone-50 border-stone-100 text-stone-400 cursor-not-allowed opacity-60"
-                        )}
-                      >
-                        {time}
-                        {!isAvailable && (
-                          <span className="block text-[10px] font-normal mt-0.5 opacity-80">
-                            No disponible
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {selectedTime && (
-                  <div className="mt-8 pt-6 border-t border-stone-100">
+          <div className={cn("md:block", selectedDate ? "block" : "hidden")}>
+            <motion.div
+              key={selectedDate ? selectedDate.toISOString() : 'no-date'}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <section>
+                <div className="flex items-center justify-between mb-2 sm:mb-4 px-1 gap-4">
+                  <div className="flex items-center gap-2 text-stone-700 text-xs sm:text-sm font-medium">
+                    <Clock size={16} className="text-brand-600" />
+                    2. Selecciona un horario disponible
+                  </div>
+                  {/* Button to return to Calendar on mobile */}
+                  {selectedDate && (
                     <button
-                      onClick={handleBook}
-                      className="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-all shadow-md shadow-brand-200/50 transform hover:-transtone-y-0.5 active:transtone-y-0"
+                      onClick={() => {
+                        setSelectedDate(null);
+                        setSelectedTime(null);
+                      }}
+                      className="md:hidden text-[11px] text-brand-700 font-medium hover:text-brand-800 flex items-center gap-1 bg-brand-50 hover:bg-brand-100 py-1 px-2.5 rounded-lg border border-brand-100 transition-colors shrink-0"
                     >
-                      Confirmar Reserva a las {selectedTime}
+                      <ArrowLeft size={13} />
+                      Volver
                     </button>
+                  )}
+                </div>
+                
+                {!selectedDate ? (
+                  <div className="bg-white rounded-2xl border border-stone-100 p-8 text-center text-stone-400 text-xs sm:text-sm">
+                    Selecciona un día en el calendario para ver los horarios disponibles.
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl border border-stone-100 p-4 sm:p-6">
+                    <h3 className="text-stone-800 text-sm sm:text-base font-medium mb-3 sm:mb-4">
+                      {(() => {
+                        const str = format(selectedDate, "EEEE d 'de' MMMM", { locale: es });
+                        return str.charAt(0).toUpperCase() + str.slice(1);
+                      })()}
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                      {TIME_SLOTS.map(time => {
+                        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                        const status = getSlotStatus(dateStr, time);
+                        const isAvailable = status === 'available';
+                        const isSelected = selectedTime === time;
+                        
+                        return (
+                          <button
+                            key={time}
+                            disabled={!isAvailable}
+                            onClick={() => setSelectedTime(time)}
+                            className={cn(
+                              "py-2 sm:py-3 px-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 border",
+                              isAvailable && !isSelected && "bg-white border-stone-200 text-stone-700 hover:border-brand-500 hover:text-brand-700",
+                              isSelected && "bg-brand-600 border-brand-600 text-white shadow-md shadow-brand-200",
+                              !isAvailable && "bg-stone-50 border-stone-100 text-stone-400 cursor-not-allowed opacity-60"
+                            )}
+                          >
+                            {time}
+                            {!isAvailable && (
+                              <span className="block text-[9px] font-normal mt-0.5 opacity-80">
+                                Ocupado
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {selectedTime && (
+                      <div className="mt-4 sm:mt-8 pt-3 sm:pt-6 border-t border-stone-100">
+                        <button
+                          onClick={handleBook}
+                          className="w-full py-2.5 sm:py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm sm:text-base font-medium rounded-lg sm:rounded-xl transition-all shadow-md shadow-brand-200/50 transform hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          Confirmar mi cita
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
-          </section>
+              </section>
+            </motion.div>
+          </div>
         </div>
 
       </main>

@@ -19,30 +19,30 @@ export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedD
   });
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border border-stone-100 p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-stone-800 capitalize">
+    <div className="w-full bg-white rounded-2xl shadow-sm border border-stone-100 p-3 sm:p-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h2 className="text-base sm:text-lg font-semibold text-stone-800 capitalize">
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
+            className="p-1.5 sm:p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
+            className="p-1.5 sm:p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
       
-      <div className="grid grid-cols-7 gap-1 text-center mb-2">
+      <div className="grid grid-cols-7 gap-1 text-center mb-1 sm:mb-2">
         {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-          <div key={day} className="text-xs font-medium text-stone-400 py-2">
+          <div key={day} className="text-[10px] sm:text-xs font-medium text-stone-400 py-1 sm:py-2">
             {day}
           </div>
         ))}
@@ -66,7 +66,7 @@ export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedD
               disabled={disabled}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "h-10 w-full sm:w-10 rounded-full flex flex-col items-center justify-center text-sm transition-all duration-200 mx-auto relative",
+                "h-8 sm:h-10 w-8 sm:w-10 rounded-full flex flex-col items-center justify-center text-xs sm:text-sm transition-all duration-200 mx-auto relative",
                 !isCurrentMonth && "text-stone-300 opacity-50",
                 isCurrentMonth && !disabled && !isSelected && !isBlocked && "text-stone-700 hover:bg-brand-50 hover:text-brand-700",
                 isCurrentMonth && !disabled && !isSelected && isBlocked && "text-red-600 hover:bg-red-50 hover:text-red-700 font-medium",
@@ -85,7 +85,7 @@ export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedD
               </span>
               
               {isCurrentMonth && !disabled && (
-                <div className="absolute bottom-1 flex gap-0.5 justify-center">
+                <div className="absolute bottom-0.5 flex gap-0.5 justify-center">
                   {isBlocked && (
                     <span className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-red-500")} />
                   )}

@@ -298,8 +298,11 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                 <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-6 border-b border-stone-100 gap-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-stone-800 capitalize">
-                        {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
+                      <h3 className="text-lg font-semibold text-stone-800">
+                        {(() => {
+                          const str = format(selectedDate, "EEEE d 'de' MMMM", { locale: es });
+                          return str.charAt(0).toUpperCase() + str.slice(1);
+                        })()}
                       </h3>
                       <p className="text-sm text-stone-500">Gestiona la disponibilidad para este día.</p>
                     </div>
