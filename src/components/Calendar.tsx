@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -23,7 +24,7 @@ export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedD
     <div className="w-full bg-white rounded-2xl shadow-sm border border-stone-100 p-3 sm:p-6">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h2 className="text-base sm:text-lg font-semibold text-stone-800 capitalize">
-          {format(currentMonth, 'MMMM yyyy')}
+          {format(currentMonth, 'MMMM yyyy', { locale: es })}
         </h2>
         <div className="flex gap-2">
           <button
