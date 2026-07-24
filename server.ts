@@ -10,6 +10,7 @@ app.use(express.json());
 
 const APPOINTMENTS_FILE = path.join(process.cwd(), 'appointments_db.json');
 const BLOCKED_SLOTS_FILE = path.join(process.cwd(), 'blocked_slots_db.json');
+const SETTINGS_FILE = path.join(process.cwd(), 'settings_db.json');
 
 // Helper to safely read files
 function readJSONFile<T>(filePath: string, defaultValue: T): T {
@@ -95,6 +96,24 @@ app.delete('/api/blocked-slots', (req, res) => {
     writeJSONFile(BLOCKED_SLOTS_FILE, slots);
     
     res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/settings', (req, res) => {
+  const settings = readJSONFile(SETTINGS_FILE, { blockedDaysOfWeek: [], blockedHours: [] });
+  res.json(settings);
+});
+
+app.post('/api/settings', (req, res) => {
+  try {
+    const settings = req.body;
+    if (!settings || !Array.isArray(settings.blockedDaysOfWeek) || !Array.isArray(settings.blockedHours)) {
+      return res.status(400).json({ error: 'Datos de configuración inválidos' });
+    }
+    writeJSONFile(SETTINGS_FILE, settings);
+    res.json({ success: true, settings });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Appointment, BlockedSlot } from '../types';
+import { Appointment, BlockedSlot, SystemSettings } from '../types';
 import { Calendar } from './Calendar';
-import { getAppointments, getBlockedSlots, saveBlockedSlot, removeBlockedSlot, TIME_SLOTS } from '../store';
+import { getAppointments, getBlockedSlots, saveBlockedSlot, removeBlockedSlot, TIME_SLOTS, getSystemSettings, saveSystemSettings } from '../store';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { LogOut, Shield, CalendarDays, Users, Ban, Trash2 } from 'lucide-react';
+import { LogOut, Shield, CalendarDays, Users, Ban, Trash2, Settings, Lock, CheckCircle2, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 function calculateAge(dobString: string): string {
@@ -30,10 +30,12 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'appointments' | 'calendar'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'calendar' | 'settings'>('appointments');
   
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ blockedDaysOfWeek: [], blockedHours: [] });
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -60,6 +62,8 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
     setAppointments(apps);
     const fetchedSlots = await getBlockedSlots();
     setBlockedSlots(fetchedSlots);
+    const settings = await getSystemSettings();
+    setSystemSettings(settings);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -172,6 +176,16 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
             <CalendarDays size={18} />
             Control de Agenda
           </button>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap",
+              activeTab === 'settings' ? "bg-stone-800 text-white" : "hover:bg-stone-800 hover:text-white"
+            )}
+          >
+            <Settings size={18} />
+            Configuración de Agenda
+          </button>
         </nav>
         
         <div className="p-4 border-t border-stone-800 hidden md:block">
@@ -189,7 +203,7 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
       <main className="flex-1 p-4 md:p-8 overflow-y-auto max-h-screen">
         <header className="flex justify-between items-center mb-8 md:hidden">
            <h2 className="text-xl font-semibold text-stone-800">
-             {activeTab === 'appointments' ? 'Citas Agendadas' : 'Control de Agenda'}
+             {activeTab === 'appointments' ? 'Citas Agendadas' : activeTab === 'calendar' ? 'Control de Agenda' : 'Configuración de Agenda'}
            </h2>
            <button 
             onClick={() => setIsLoggedIn(false)}
@@ -378,6 +392,139 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                   <p>Selecciona un día en el calendario para gestionar su disponibilidad.</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="max-w-3xl">
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-stone-800 hidden md:block">Configuración de Agenda</h2>
+              <p className="text-stone-500 mt-1">Define reglas globales para inhabilitar días de la semana y horarios específicos para siempre.</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-8">
+              {/* Bloqueo de Días de la Semana */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-stone-800 flex items-center gap-2">
+                  <CalendarDays size={20} className="text-brand-600" />
+                  Días de la semana bloqueados (Cerrados)
+                </h3>
+                <p className="text-sm text-stone-500">
+                  Los días seleccionados no estarán disponibles para reservar citas en ningún mes.
+                </p>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Domingo', value: 0 },
+                    { label: 'Lunes', value: 1 },
+                    { label: 'Martes', value: 2 },
+                    { label: 'Miércoles', value: 3 },
+                    { label: 'Jueves', value: 4 },
+                    { label: 'Viernes', value: 5 },
+                    { label: 'Sábado', value: 6 }
+                  ].map(day => {
+                    const isSelected = systemSettings.blockedDaysOfWeek.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => {
+                          const updatedDays = isSelected
+                            ? systemSettings.blockedDaysOfWeek.filter(v => v !== day.value)
+                            : [...systemSettings.blockedDaysOfWeek, day.value];
+                          setSystemSettings({
+                            ...systemSettings,
+                            blockedDaysOfWeek: updatedDays
+                          });
+                        }}
+                        className={cn(
+                          "py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 border flex items-center gap-2 justify-center",
+                          isSelected
+                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-semibold"
+                            : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100"
+                        )}
+                      >
+                        <Lock size={14} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0")} />
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bloqueo de Horarios Permanentes */}
+              <div className="space-y-4 border-t border-stone-100 pt-6">
+                <h3 className="text-lg font-medium text-stone-800 flex items-center gap-2">
+                  <Clock size={20} className="text-brand-600" />
+                  Horarios permanentemente bloqueados
+                </h3>
+                <p className="text-sm text-stone-500">
+                  Las horas seleccionadas no estarán disponibles para agendar citas en ningún día del calendario.
+                </p>
+                
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {TIME_SLOTS.map(time => {
+                    const isSelected = systemSettings.blockedHours.includes(time);
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => {
+                          const updatedHours = isSelected
+                            ? systemSettings.blockedHours.filter(h => h !== time)
+                            : [...systemSettings.blockedHours, time];
+                          setSystemSettings({
+                            ...systemSettings,
+                            blockedHours: updatedHours
+                          });
+                        }}
+                        className={cn(
+                          "py-3 px-3 rounded-xl text-sm font-medium transition-all duration-200 border flex items-center gap-2 justify-center",
+                          isSelected
+                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-semibold"
+                            : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100"
+                        )}
+                      >
+                        <Lock size={12} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0")} />
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Guardar Button & Feedback */}
+              <div className="flex items-center gap-4 border-t border-stone-100 pt-6 justify-end">
+                {saveStatus === 'saved' && (
+                  <span className="text-emerald-600 text-sm font-medium flex items-center gap-1.5 animate-in fade-in duration-200">
+                    <CheckCircle2 size={16} />
+                    ¡Configuración guardada!
+                  </span>
+                )}
+                {saveStatus === 'error' && (
+                  <span className="text-red-500 text-sm font-medium">
+                    Error al guardar la configuración.
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setSaveStatus('saving');
+                    try {
+                      await saveSystemSettings(systemSettings);
+                      setSaveStatus('saved');
+                      setTimeout(() => setSaveStatus('idle'), 3000);
+                    } catch (e) {
+                      setSaveStatus('error');
+                    }
+                  }}
+                  disabled={saveStatus === 'saving'}
+                  className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {saveStatus === 'saving' ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
             </div>
           </div>
         )}

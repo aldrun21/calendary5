@@ -17,3 +17,8 @@ export interface User {
   dob: string;
   phone: string;
 }
+
+export interface SystemSettings {
+  blockedDaysOfWeek: number[]; // 0 = Sunday, 1 = Monday, etc.
+  blockedHours: string[]; // e.g. ["12:00", "13:00"]
+}

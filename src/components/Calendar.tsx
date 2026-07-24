@@ -8,9 +8,10 @@ interface CalendarProps {
   onSelectDate: (date: Date) => void;
   blockedDays?: string[];
   bookedDays?: string[];
+  blockedDaysOfWeek?: number[];
 }
 
-export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedDays = [] }: CalendarProps) {
+export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedDays = [], blockedDaysOfWeek = [] }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const daysInMonth = eachDayOfInterval({
@@ -57,8 +58,9 @@ export function Calendar({ selectedDate, onSelectDate, blockedDays = [], bookedD
           const dateString = format(date, 'yyyy-MM-dd');
           const isBlocked = blockedDays.includes(dateString);
           const isBooked = bookedDays.includes(dateString);
+          const isDayOfWeekBlocked = blockedDaysOfWeek.includes(date.getDay());
 
-          const disabled = !isCurrentMonth || isPast;
+          const disabled = !isCurrentMonth || isPast || isDayOfWeekBlocked;
 
           return (
             <button

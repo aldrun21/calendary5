@@ -1,7 +1,8 @@
-import { Appointment, BlockedSlot } from './types';
+import { Appointment, BlockedSlot, SystemSettings } from './types';
 
 const APPOINTMENTS_KEY = 'derm_appointments';
 const BLOCKED_SLOTS_KEY = 'derm_blocked_slots';
+const SETTINGS_KEY = 'derm_settings';
 
 export const TIME_SLOTS = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
@@ -95,4 +96,34 @@ export const removeBlockedSlot = async (date: string, time: string | 'ALL'): Pro
   slots = slots.filter(s => !(s.date === date && s.time === time));
   localStorage.setItem(BLOCKED_SLOTS_KEY, JSON.stringify(slots));
 };
+
+export const getSystemSettings = async (): Promise<SystemSettings> => {
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    // Fallback
+  }
+  const data = localStorage.getItem(SETTINGS_KEY);
+  return data ? JSON.parse(data) : { blockedDaysOfWeek: [], blockedHours: [] };
+};
+
+export const saveSystemSettings = async (settings: SystemSettings): Promise<void> => {
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    if (res.ok) {
+      return;
+    }
+  } catch (e) {
+    // Fallback
+  }
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+};
+
 

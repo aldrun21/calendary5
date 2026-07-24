@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Appointment, BlockedSlot } from '../types';
+import { User, Appointment, BlockedSlot, SystemSettings } from '../types';
 import { Calendar } from './Calendar';
-import { getAppointments, getBlockedSlots, saveAppointment, TIME_SLOTS } from '../store';
+import { getAppointments, getBlockedSlots, saveAppointment, TIME_SLOTS, getSystemSettings } from '../store';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LogOut, CheckCircle2, User as UserIcon, Calendar as CalendarIcon, Clock, MapPin, CreditCard, Info, X, ArrowLeft } from 'lucide-react';
@@ -24,6 +24,7 @@ export function ClientInterface() {
   
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ blockedDaysOfWeek: [], blockedHours: [] });
   
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
@@ -41,9 +42,9 @@ export function ClientInterface() {
         return;
       }
 
-      // 2. If all slots are either booked or blocked
+      // 2. If all slots are either booked, blocked, or globally blocked
       const allSlotsOccupied = TIME_SLOTS.every(time => {
-        const isBlocked = blockedSlots.some(s => s.date === dateStr && s.time === time);
+        const isBlocked = blockedSlots.some(s => s.date === dateStr && s.time === time) || systemSettings.blockedHours.includes(time);
         const isBooked = appointments.some(a => a.date === dateStr && a.time === time);
         return isBlocked || isBooked;
       });
@@ -53,7 +54,7 @@ export function ClientInterface() {
       }
     });
     return result;
-  }, [appointments, blockedSlots]);
+  }, [appointments, blockedSlots, systemSettings]);
 
   // Days with at least one booking (reserved slot)
   const bookedDays = React.useMemo(() => {
@@ -67,9 +68,11 @@ export function ClientInterface() {
     const loadData = async () => {
       const apps = await getAppointments();
       const slots = await getBlockedSlots();
+      const settings = await getSystemSettings();
       if (active) {
         setAppointments(apps);
         setBlockedSlots(slots);
+        setSystemSettings(settings);
       }
     };
     loadData();
@@ -218,8 +221,8 @@ export function ClientInterface() {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-3 sm:p-4">
         <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-stone-100 w-full max-w-md">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-            <UserIcon size={24} className="sm:w-8 sm:h-8" />
+          <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <img src="/logo-sm.svg" alt="Isotipo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold text-center text-stone-800 mb-1">Reserva tu cita</h1>
           <p className="text-stone-500 text-xs sm:text-sm text-center mb-5 sm:mb-8">Ingresa tus datos para agendar una cita dermatológica.</p>
@@ -352,6 +355,8 @@ export function ClientInterface() {
     if (blockedSlots.some(s => s.date === dateStr && s.time === 'ALL')) return 'blocked';
     // Check if specific time is blocked
     if (blockedSlots.some(s => s.date === dateStr && s.time === time)) return 'blocked';
+    // Check if this slot is globally blocked
+    if (systemSettings.blockedHours.includes(time)) return 'blocked';
     // Check if already booked
     if (appointments.some(a => a.date === dateStr && a.time === time)) return 'booked';
     
@@ -408,6 +413,7 @@ export function ClientInterface() {
                   }} 
                   blockedDays={blockedDays}
                   bookedDays={bookedDays}
+                  blockedDaysOfWeek={systemSettings.blockedDaysOfWeek}
                 />
               </section>
             </motion.div>

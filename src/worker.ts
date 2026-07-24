@@ -138,6 +138,41 @@ export default {
       }
     }
 
+    if (pathname === "/api/settings") {
+      if (request.method === "GET") {
+        const value = await env.DERM_STORE.get("settings");
+        return new Response(value || '{"blockedDaysOfWeek":[],"blockedHours":[]}', {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
+
+      if (request.method === "POST") {
+        try {
+          const settings: any = await request.json();
+          if (!settings || !Array.isArray(settings.blockedDaysOfWeek) || !Array.isArray(settings.blockedHours)) {
+            return new Response(JSON.stringify({ error: "Datos de configuración inválidos" }), {
+              status: 400,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+
+          await env.DERM_STORE.put("settings", JSON.stringify(settings));
+
+          return new Response(JSON.stringify({ success: true, settings }), {
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        }
+      }
+    }
+
     // Default: Fallback to serving static assets
     try {
       let response = await env.ASSETS.fetch(request);
