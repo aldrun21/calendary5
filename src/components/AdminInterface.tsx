@@ -4,7 +4,7 @@ import { Calendar } from './Calendar';
 import { getAppointments, getBlockedSlots, saveBlockedSlot, removeBlockedSlot, TIME_SLOTS, getSystemSettings, saveSystemSettings } from '../store';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { LogOut, Shield, CalendarDays, Users, Ban, Trash2, Settings, Lock, CheckCircle2, Clock } from 'lucide-react';
+import { LogOut, Shield, CalendarDays, Users, Ban, Trash2, Settings, Lock, CheckCircle2, Clock, Search, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 function calculateAge(dobString: string): string {
@@ -38,6 +38,32 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const filteredAndSortedAppointments = React.useMemo(() => {
+    let result = [...appointments];
+    
+    // Filter by search term
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(app => 
+        app.patientName.toLowerCase().includes(term) ||
+        app.patientPhone.toLowerCase().includes(term) ||
+        app.date.toLowerCase().includes(term)
+      );
+    }
+    
+    // Sort by date and time
+    result.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time}`).getTime();
+      const dateB = new Date(`${b.date}T${b.time}`).getTime();
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+    
+    return result;
+  }, [appointments, searchTerm, sortOrder]);
 
   const bookedDays = React.useMemo(() => {
     const dates = new Set<string>();
@@ -144,7 +170,7 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
     <div className="min-h-screen bg-stone-50 flex flex-col md:flex-row">
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-stone-900 text-stone-300 md:min-h-screen flex flex-col">
-        <div className="p-6 pb-2 border-b border-stone-800">
+        <div className="p-6 pb-2 border-b border-stone-800 hidden md:block">
           <div className="flex items-center gap-3 text-white mb-2">
             <div className="h-8 md:h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden px-1 md:px-2">
               <img src="/logo-sm.svg" alt="Logo" className="h-full w-auto object-contain md:hidden p-1" />
@@ -155,35 +181,35 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
           <p className="text-xs text-stone-500">Gestión de Consultorio</p>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible">
+        <nav className="flex-1 p-2 md:p-4 gap-1.5 flex flex-row md:flex-col overflow-x-auto md:overflow-visible md:space-y-2">
           <button 
             onClick={() => setActiveTab('appointments')}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap",
+              "flex items-center gap-1.5 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
               activeTab === 'appointments' ? "bg-stone-800 text-white" : "hover:bg-stone-800 hover:text-white"
             )}
           >
-            <Users size={18} />
+            <Users size={16} className="md:w-[18px] md:h-[18px]" />
             Citas Agendadas
           </button>
           <button 
             onClick={() => setActiveTab('calendar')}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap",
+              "flex items-center gap-1.5 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
               activeTab === 'calendar' ? "bg-stone-800 text-white" : "hover:bg-stone-800 hover:text-white"
             )}
           >
-            <CalendarDays size={18} />
+            <CalendarDays size={16} className="md:w-[18px] md:h-[18px]" />
             Control de Agenda
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap",
+              "flex items-center gap-1.5 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
               activeTab === 'settings' ? "bg-stone-800 text-white" : "hover:bg-stone-800 hover:text-white"
             )}
           >
-            <Settings size={18} />
+            <Settings size={16} className="md:w-[18px] md:h-[18px]" />
             Configuración de Agenda
           </button>
         </nav>
@@ -200,46 +226,110 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-h-screen">
-        <header className="flex justify-between items-center mb-8 md:hidden">
-           <h2 className="text-xl font-semibold text-stone-800">
+      <main className="flex-1 p-3 sm:p-6 md:p-8 overflow-y-auto max-h-screen">
+        <header className="flex justify-between items-center mb-4 sm:mb-8 md:hidden">
+           <h2 className="text-base sm:text-xl font-semibold text-stone-800">
              {activeTab === 'appointments' ? 'Citas Agendadas' : activeTab === 'calendar' ? 'Control de Agenda' : 'Configuración de Agenda'}
            </h2>
            <button 
             onClick={() => setIsLoggedIn(false)}
-            className="text-stone-500"
+            className="text-stone-500 hover:text-stone-700"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
           </button>
         </header>
 
         {activeTab === 'appointments' && (
           <div className="max-w-5xl">
             <h2 className="text-2xl font-semibold text-stone-800 mb-6 hidden md:block">Próximas Citas</h2>
+
+            {/* Buscador y Organizador */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-4 md:mb-6 items-stretch sm:items-center justify-between">
+              {/* Buscador */}
+              <div className="relative flex-1 max-w-md">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                  <Search size={16} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, teléfono..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 md:py-2.5 bg-white border border-stone-200 rounded-lg md:rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/15 focus:border-stone-500 transition-colors placeholder:text-stone-400 text-stone-800 shadow-sm"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-400 hover:text-stone-600 text-[10px] md:text-xs font-medium"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              {/* Organizador */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-stone-500 whitespace-nowrap hidden sm:inline">Ordenar por fecha:</span>
+                <div className="inline-flex rounded-lg md:rounded-xl border border-stone-200 bg-white p-0.5 md:p-1 shadow-sm w-full sm:w-auto">
+                  <button
+                    onClick={() => setSortOrder('asc')}
+                    className={cn(
+                      "flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-md md:rounded-lg text-[10px] md:text-xs font-medium transition-all",
+                      sortOrder === 'asc'
+                        ? "bg-stone-100 text-stone-800"
+                        : "text-stone-500 hover:text-stone-800"
+                    )}
+                  >
+                    <ChevronUp size={12} className="md:w-[14px] md:h-[14px]" />
+                    Próximas primero
+                  </button>
+                  <button
+                    onClick={() => setSortOrder('desc')}
+                    className={cn(
+                      "flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-md md:rounded-lg text-[10px] md:text-xs font-medium transition-all",
+                      sortOrder === 'desc'
+                        ? "bg-stone-100 text-stone-800"
+                        : "text-stone-500 hover:text-stone-800"
+                    )}
+                  >
+                    <ChevronDown size={12} className="md:w-[14px] md:h-[14px]" />
+                    Últimas primero
+                  </button>
+                </div>
+              </div>
+            </div>
             
-            <div className="md:hidden space-y-4">
+            <div className="md:hidden space-y-2.5">
               {appointments.length === 0 ? (
-                <div className="p-8 text-center text-stone-400 bg-white rounded-2xl shadow-sm border border-stone-200">
+                <div className="p-6 text-center text-xs text-stone-400 bg-white rounded-xl shadow-sm border border-stone-200">
                   No hay citas agendadas actualmente.
                 </div>
+              ) : filteredAndSortedAppointments.length === 0 ? (
+                <div className="p-6 text-center text-xs text-stone-400 bg-white rounded-xl shadow-sm border border-stone-200">
+                  No se encontraron citas que coincidan con la búsqueda.
+                </div>
               ) : (
-                appointments.map(app => (
-                  <div key={app.id} className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-medium text-stone-800 text-lg">{app.patientName}</h3>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-brand-50 text-brand-700 border border-brand-100">
+                filteredAndSortedAppointments.map(app => (
+                  <div key={app.id} className="bg-white p-3.5 rounded-xl shadow-sm border border-stone-200/80">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-semibold text-stone-800 text-sm">{app.patientName}</h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-brand-50 text-brand-700 border border-brand-100/50">
                         {app.time}
                       </span>
                     </div>
-                    <div className="text-sm text-stone-500 mb-1">
-                      <span className="font-medium text-stone-700">F. Nacimiento:</span> {app.patientDob} <span className="text-stone-400 font-normal">({calculateAge(app.patientDob)})</span>
-                    </div>
-                    <div className="text-sm text-stone-500 mb-1">
-                      <span className="font-medium text-stone-700">Teléfono:</span> {app.patientPhone}
-                    </div>
-                    <div className="text-sm text-stone-700 capitalize flex gap-1">
-                      <span className="font-medium text-stone-700 normal-case">Cita:</span> 
-                      {format(parseISO(app.date), "EEE, d MMM yyyy", { locale: es })}
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                      <div className="text-stone-500">
+                        <span className="font-medium text-stone-700 block text-[10px] uppercase tracking-wider mb-0.5">F. Nacimiento</span> 
+                        {app.patientDob} <span className="text-stone-400 font-normal">({calculateAge(app.patientDob)})</span>
+                      </div>
+                      <div className="text-stone-500">
+                        <span className="font-medium text-stone-700 block text-[10px] uppercase tracking-wider mb-0.5">Teléfono</span> 
+                        {app.patientPhone}
+                      </div>
+                      <div className="text-stone-700 col-span-2 capitalize pt-1 mt-1 border-t border-stone-100">
+                        <span className="font-semibold text-stone-500 block text-[10px] uppercase tracking-wider normal-case mb-0.5">Fecha de Cita</span> 
+                        {format(parseISO(app.date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -265,8 +355,14 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                           No hay citas agendadas actualmente.
                         </td>
                       </tr>
+                    ) : filteredAndSortedAppointments.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-stone-400">
+                          No se encontraron citas que coincidan con la búsqueda.
+                        </td>
+                      </tr>
                     ) : (
-                      appointments.map(app => (
+                      filteredAndSortedAppointments.map(app => (
                         <tr key={app.id} className="hover:bg-stone-50 transition-colors">
                           <td className="p-4 font-medium text-stone-800 whitespace-nowrap">{app.patientName}</td>
                           <td className="p-4 text-stone-600 text-sm whitespace-nowrap">{app.patientPhone}</td>
@@ -293,13 +389,13 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
 
         {activeTab === 'calendar' && (
           <div className="max-w-5xl">
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <h2 className="text-2xl font-semibold text-stone-800 hidden md:block">Control de Agenda</h2>
-              <p className="text-stone-500 mt-1">Bloquea días enteros o franjas horarias para evitar que los pacientes agenden citas.</p>
+              <p className="text-stone-500 text-xs sm:text-sm mt-0.5">Bloquea días enteros o franjas horarias para evitar que los pacientes agenden citas.</p>
             </div>
             
-            <div className="grid lg:grid-cols-[350px_1fr] gap-8 items-start">
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+            <div className="grid lg:grid-cols-[330px_1fr] gap-4 md:gap-8 items-start">
+              <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-stone-200 shadow-sm">
                 <Calendar 
                   selectedDate={selectedDate} 
                   onSelectDate={setSelectedDate}
@@ -309,45 +405,45 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {selectedDate ? (
-                <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-6 border-b border-stone-100 gap-4">
+                <div className="bg-white rounded-xl md:rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-4 md:mb-6 md:pb-6 border-b border-stone-100 gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-stone-800">
+                      <h3 className="text-base md:text-lg font-semibold text-stone-800">
                         {(() => {
-                          const str = format(selectedDate, "EEEE d 'de' MMMM", { locale: es });
-                          return str.charAt(0).toUpperCase() + str.slice(1);
+                           const str = format(selectedDate, "EEEE d 'de' MMMM", { locale: es });
+                           return str.charAt(0).toUpperCase() + str.slice(1);
                         })()}
                       </h3>
-                      <p className="text-sm text-stone-500">Gestiona la disponibilidad para este día.</p>
+                      <p className="text-xs md:text-sm text-stone-500">Gestiona la disponibilidad para este día.</p>
                     </div>
                     
                     {/* Block Whole Day Button */}
                     <button
                       onClick={() => toggleBlockTime(format(selectedDate, 'yyyy-MM-dd'), 'ALL')}
                       className={cn(
-                        "flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border",
+                        "flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors border",
                         blockedSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.time === 'ALL')
                           ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
                           : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
                       )}
                     >
-                      <Ban size={16} />
+                      <Ban size={14} className="md:w-4 md:h-4" />
                       {blockedSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.time === 'ALL')
                         ? "Desbloquear Día Completo"
                         : "Bloquear Día Completo"}
                     </button>
                   </div>
 
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-stone-700">Franjas Horarias</h4>
+                  <div className="space-y-3">
+                    <h4 className="text-xs md:text-sm font-semibold uppercase tracking-wider text-stone-500">Franjas Horarias</h4>
                     
                     {blockedSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.time === 'ALL') ? (
-                      <div className="p-8 text-center text-red-500 bg-red-50 rounded-xl border border-red-100">
-                        <Ban className="mx-auto mb-2 opacity-50" size={32} />
+                      <div className="p-6 md:p-8 text-center text-xs md:text-sm text-red-500 bg-red-50 rounded-lg md:rounded-xl border border-red-100">
+                        <Ban className="mx-auto mb-2 opacity-50" size={28} />
                         Este día está completamente bloqueado.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         {TIME_SLOTS.map(time => {
                           const dateStr = format(selectedDate, 'yyyy-MM-dd');
                           const bookedAppointment = appointments.find(a => a.date === dateStr && a.time === time);
@@ -355,9 +451,9 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                           
                           if (bookedAppointment) {
                             return (
-                              <div key={time} className="py-2 px-2 rounded-xl text-sm font-medium border border-brand-200 bg-brand-50 text-brand-700 flex flex-col items-center justify-center relative opacity-80 cursor-not-allowed text-center">
+                              <div key={time} className="py-2 px-1.5 rounded-lg text-xs font-semibold border border-brand-200 bg-brand-50 text-brand-700 flex flex-col items-center justify-center relative opacity-80 cursor-not-allowed text-center">
                                 {time}
-                                <span className="text-[10px] mt-0.5 text-brand-600 truncate w-full px-1" title={bookedAppointment.patientName}>
+                                <span className="text-[9px] mt-0.5 text-brand-600 truncate w-full px-1" title={bookedAppointment.patientName}>
                                   {bookedAppointment.patientName}
                                 </span>
                               </div>
@@ -369,14 +465,14 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                               key={time}
                               onClick={() => toggleBlockTime(dateStr, time)}
                               className={cn(
-                                "py-3 px-2 rounded-xl text-sm font-medium transition-all duration-200 border flex flex-col items-center justify-center",
+                                "py-2 sm:py-2.5 px-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border flex flex-col items-center justify-center",
                                 isBlocked 
                                   ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100" 
                                   : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
                               )}
                             >
                               {time}
-                              <span className="text-[10px] mt-0.5 font-normal opacity-70">
+                              <span className="text-[9px] mt-0.5 font-normal opacity-70">
                                 {isBlocked ? 'Bloqueado' : 'Disponible'}
                               </span>
                             </button>
@@ -387,9 +483,9 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                   </div>
                 </div>
               ) : (
-                <div className="bg-stone-50 rounded-2xl border border-stone-200 p-12 text-center flex flex-col items-center justify-center text-stone-400">
-                  <CalendarDays size={48} className="mb-4 opacity-20" />
-                  <p>Selecciona un día en el calendario para gestionar su disponibilidad.</p>
+                <div className="bg-stone-50 rounded-xl md:rounded-2xl border border-stone-200 p-6 md:p-12 text-center flex flex-col items-center justify-center text-stone-400">
+                  <CalendarDays size={36} className="mb-3 opacity-20" />
+                  <p className="text-xs md:text-sm">Selecciona un día en el calendario para gestionar su disponibilidad.</p>
                 </div>
               )}
             </div>
@@ -398,23 +494,23 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
 
         {activeTab === 'settings' && (
           <div className="max-w-3xl">
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <h2 className="text-2xl font-semibold text-stone-800 hidden md:block">Configuración de Agenda</h2>
-              <p className="text-stone-500 mt-1">Define reglas globales para inhabilitar días de la semana y horarios específicos para siempre.</p>
+              <p className="text-stone-500 text-xs sm:text-sm mt-0.5">Define reglas globales para inhabilitar días de la semana y horarios específicos para siempre.</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-8">
+            <div className="bg-white rounded-xl md:rounded-2xl border border-stone-200 shadow-sm p-4 md:p-6 space-y-6 md:space-y-8">
               {/* Bloqueo de Días de la Semana */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-stone-800 flex items-center gap-2">
-                  <CalendarDays size={20} className="text-brand-600" />
+              <div className="space-y-3">
+                <h3 className="text-sm md:text-base font-semibold text-stone-800 flex items-center gap-2">
+                  <CalendarDays size={18} className="text-brand-600 md:w-5 md:h-5" />
                   Días de la semana bloqueados (Cerrados)
                 </h3>
-                <p className="text-sm text-stone-500">
+                <p className="text-xs md:text-sm text-stone-500">
                   Los días seleccionados no estarán disponibles para reservar citas en ningún mes.
                 </p>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { label: 'Domingo', value: 0 },
                     { label: 'Lunes', value: 1 },
@@ -439,13 +535,13 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                           });
                         }}
                         className={cn(
-                          "py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 border flex items-center gap-2 justify-center",
+                          "py-2 px-2.5 rounded-lg text-xs font-semibold transition-all duration-200 border flex items-center gap-1.5 justify-center",
                           isSelected
-                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-semibold"
+                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-bold"
                             : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100"
                         )}
                       >
-                        <Lock size={14} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0")} />
+                        <Lock size={12} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0 w-0 h-0")} />
                         {day.label}
                       </button>
                     );
@@ -454,16 +550,16 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {/* Bloqueo de Horarios Permanentes */}
-              <div className="space-y-4 border-t border-stone-100 pt-6">
-                <h3 className="text-lg font-medium text-stone-800 flex items-center gap-2">
-                  <Clock size={20} className="text-brand-600" />
+              <div className="space-y-3 border-t border-stone-100 pt-5">
+                <h3 className="text-sm md:text-base font-semibold text-stone-800 flex items-center gap-2">
+                  <Clock size={18} className="text-brand-600 md:w-5 md:h-5" />
                   Horarios permanentemente bloqueados
                 </h3>
-                <p className="text-sm text-stone-500">
+                <p className="text-xs md:text-sm text-stone-500">
                   Las horas seleccionadas no estarán disponibles para agendar citas en ningún día del calendario.
                 </p>
                 
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {TIME_SLOTS.map(time => {
                     const isSelected = systemSettings.blockedHours.includes(time);
                     return (
@@ -480,13 +576,13 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                           });
                         }}
                         className={cn(
-                          "py-3 px-3 rounded-xl text-sm font-medium transition-all duration-200 border flex items-center gap-2 justify-center",
+                          "py-2 px-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border flex items-center gap-1.5 justify-center",
                           isSelected
-                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-semibold"
+                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-bold"
                             : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100"
                         )}
                       >
-                        <Lock size={12} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0")} />
+                        <Lock size={11} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0 w-0 h-0")} />
                         {time}
                       </button>
                     );
@@ -495,15 +591,15 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {/* Guardar Button & Feedback */}
-              <div className="flex items-center gap-4 border-t border-stone-100 pt-6 justify-end">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 border-t border-stone-100 pt-5 justify-end">
                 {saveStatus === 'saved' && (
-                  <span className="text-emerald-600 text-sm font-medium flex items-center gap-1.5 animate-in fade-in duration-200">
-                    <CheckCircle2 size={16} />
+                  <span className="text-emerald-600 text-xs md:text-sm font-medium flex items-center justify-center gap-1.5 animate-in fade-in duration-200">
+                    <CheckCircle2 size={14} className="md:w-4 md:h-4" />
                     ¡Configuración guardada!
                   </span>
                 )}
                 {saveStatus === 'error' && (
-                  <span className="text-red-500 text-sm font-medium">
+                  <span className="text-red-500 text-xs md:text-sm font-medium text-center">
                     Error al guardar la configuración.
                   </span>
                 )}
@@ -520,7 +616,7 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                     }
                   }}
                   disabled={saveStatus === 'saving'}
-                  className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                  className="px-4 py-2 sm:px-6 sm:py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
                 >
                   {saveStatus === 'saving' ? 'Guardando...' : 'Guardar Cambios'}
                 </button>

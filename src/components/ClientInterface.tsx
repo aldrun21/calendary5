@@ -327,7 +327,10 @@ export function ClientInterface() {
             <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2">
               <span className="text-stone-500 font-medium">Fecha:</span>
               <span className="font-semibold text-stone-800">
-                {selectedDate && format(selectedDate, "d 'de' MMMM, yyyy", { locale: es })}
+                {selectedDate && (() => {
+                  const str = format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
+                  return str.charAt(0).toUpperCase() + str.slice(1);
+                })()}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -342,7 +345,7 @@ export function ClientInterface() {
             onClick={resetBooking}
             className="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors"
           >
-            Finalizado
+            Finalizar
           </button>
         </div>
       </div>
@@ -388,7 +391,7 @@ export function ClientInterface() {
       <main className="max-w-4xl mx-auto px-4 py-3 sm:py-8">
         <div className="mb-3 sm:mb-8">
           <h1 className="text-lg sm:text-2xl font-semibold text-stone-800">Reserva tu cita</h1>
-          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">Selecciona la fecha y el horario que mejor se adapten a ti para tu consulta dermatológica.</p>
+          <p className="text-stone-500 text-xs sm:text-sm mt-0.5">Selecciona la fecha y el horario que mejor se adapten a ti para tu consulta dermatológica</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 sm:gap-8 items-start">
