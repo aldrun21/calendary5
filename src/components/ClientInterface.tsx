@@ -225,7 +225,7 @@ export function ClientInterface() {
             <img src="/logo-sm.svg" alt="Isotipo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold text-center text-stone-800 mb-1">Reserva tu cita</h1>
-          <p className="text-stone-500 text-xs sm:text-sm text-center mb-5 sm:mb-8">Ingresa tus datos para agendar una cita dermatológica.</p>
+          <p className="text-stone-500 text-xs sm:text-sm text-center mb-5 sm:mb-8">Completa tus datos para ver los horarios disponibles</p>
           
           <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
             <div>
