@@ -309,7 +309,7 @@ export function ClientInterface() {
       if (!timeStr) return '';
       const [hourStr, minuteStr] = timeStr.split(':');
       const hour = parseInt(hourStr, 10);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
       const hour12 = hour % 12 || 12;
       return `${hour12}:${minuteStr} ${ampm}`;
     };
@@ -334,10 +334,8 @@ export function ClientInterface() {
                 <span className="font-semibold text-stone-800 text-right">
                   {selectedDate && (() => {
                     const dateStr = format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es });
-                    const dayAbbrev = format(selectedDate, "EEE", { locale: es });
-                    const cleanDay = dayAbbrev.replace('.', '');
-                    const formattedDay = cleanDay.charAt(0).toUpperCase() + cleanDay.slice(1);
-                    return `${dateStr} (${formattedDay}.)`;
+                    const dayName = format(selectedDate, "EEEE", { locale: es }).toLowerCase();
+                    return `${dateStr} (${dayName})`;
                   })()}
                 </span>
               </div>
