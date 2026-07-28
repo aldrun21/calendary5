@@ -21,4 +21,5 @@ export interface User {
 export interface SystemSettings {
   blockedDaysOfWeek: number[]; // 0 = Sunday, 1 = Monday, etc.
   blockedHours: string[]; // e.g. ["12:00", "13:00"]
+  blockedSaturdayHours: string[]; // e.g. ["15:00", "16:00"] for Saturdays
 }

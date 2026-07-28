@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Appointment, BlockedSlot, SystemSettings } from '../types';
 import { Calendar } from './Calendar';
 import { getAppointments, getBlockedSlots, saveAppointment, TIME_SLOTS, getSystemSettings } from '../store';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LogOut, CheckCircle2, User as UserIcon, Calendar as CalendarIcon, Clock, MapPin, CreditCard, Info, X, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -24,7 +24,7 @@ export function ClientInterface() {
   
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ blockedDaysOfWeek: [], blockedHours: [] });
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ blockedDaysOfWeek: [], blockedHours: [], blockedSaturdayHours: [] });
   
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
@@ -44,7 +44,9 @@ export function ClientInterface() {
 
       // 2. If all slots are either booked, blocked, or globally blocked
       const allSlotsOccupied = TIME_SLOTS.every(time => {
-        const isBlocked = blockedSlots.some(s => s.date === dateStr && s.time === time) || systemSettings.blockedHours.includes(time);
+        const dateObj = parseISO(dateStr);
+        const isSaturdayHourBlocked = dateObj.getDay() === 6 && (systemSettings.blockedSaturdayHours || []).includes(time);
+        const isBlocked = blockedSlots.some(s => s.date === dateStr && s.time === time) || systemSettings.blockedHours.includes(time) || isSaturdayHourBlocked;
         const isBooked = appointments.some(a => a.date === dateStr && a.time === time);
         return isBlocked || isBooked;
       });
@@ -318,26 +320,34 @@ export function ClientInterface() {
           <CheckCircle2 className="w-20 h-20 text-brand-500 mx-auto mb-6" />
           <h2 className="text-2xl font-semibold text-stone-800 mb-2">¡Cita Confirmada!</h2>
           
-          <div className="text-stone-600 mb-8 space-y-3 text-left bg-stone-50 p-6 rounded-2xl border border-stone-100">
+          <div className="text-stone-600 mb-8 bg-stone-50 p-6 rounded-2xl border border-stone-100">
             <p className="font-semibold text-stone-800 mb-4 text-center text-base">Detalles de tu reserva:</p>
-            <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2">
-              <span className="text-stone-500 font-medium">Servicio:</span>
-              <span className="font-semibold text-stone-800">Consulta dermatológica</span>
-            </div>
-            <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2">
-              <span className="text-stone-500 font-medium">Fecha:</span>
-              <span className="font-semibold text-stone-800">
-                {selectedDate && (() => {
-                  const str = format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
-                  return str.charAt(0).toUpperCase() + str.slice(1);
-                })()}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-stone-500 font-medium">Hora:</span>
-              <span className="font-semibold text-stone-800">
-                {formatTimeTo12h(selectedTime)}
-              </span>
+            
+            <div className="max-w-[320px] mx-auto space-y-3.5 text-left">
+              <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2.5 gap-4">
+                <span className="text-stone-500 font-medium">Servicio:</span>
+                <span className="font-semibold text-stone-800 text-right">Consulta dermatológica</span>
+              </div>
+              
+              <div className="flex justify-between items-center text-sm border-b border-stone-200/50 pb-2.5 gap-4">
+                <span className="text-stone-500 font-medium">Fecha:</span>
+                <span className="font-semibold text-stone-800 text-right">
+                  {selectedDate && (() => {
+                    const dateStr = format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es });
+                    const dayAbbrev = format(selectedDate, "EEE", { locale: es });
+                    const cleanDay = dayAbbrev.replace('.', '');
+                    const formattedDay = cleanDay.charAt(0).toUpperCase() + cleanDay.slice(1);
+                    return `${dateStr} (${formattedDay}.)`;
+                  })()}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center text-sm gap-4">
+                <span className="text-stone-500 font-medium">Hora:</span>
+                <span className="font-semibold text-stone-800 text-right">
+                  {formatTimeTo12h(selectedTime)}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -360,6 +370,13 @@ export function ClientInterface() {
     if (blockedSlots.some(s => s.date === dateStr && s.time === time)) return 'blocked';
     // Check if this slot is globally blocked
     if (systemSettings.blockedHours.includes(time)) return 'blocked';
+    
+    // Check if this is Saturday and the slot is blocked in Saturday-specific settings
+    const dateObj = parseISO(dateStr);
+    if (dateObj.getDay() === 6 && (systemSettings.blockedSaturdayHours || []).includes(time)) {
+      return 'blocked';
+    }
+
     // Check if already booked
     if (appointments.some(a => a.date === dateStr && a.time === time)) return 'booked';
     

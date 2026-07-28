@@ -34,7 +34,7 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
   
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ blockedDaysOfWeek: [], blockedHours: [] });
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ blockedDaysOfWeek: [], blockedHours: [], blockedSaturdayHours: [] });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -573,6 +573,53 @@ export function AdminInterface({ onLogout }: { onLogout: () => void }) {
                           setSystemSettings({
                             ...systemSettings,
                             blockedHours: updatedHours
+                          });
+                        }}
+                        className={cn(
+                          "py-2 px-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border flex items-center gap-1.5 justify-center",
+                          isSelected
+                            ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 font-bold"
+                            : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100"
+                        )}
+                      >
+                        <Lock size={11} className={cn("shrink-0 transition-opacity duration-200", isSelected ? "opacity-100 text-red-500" : "opacity-0 w-0 h-0")} />
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Configuración de Horarios para los Sábados */}
+              <div className="space-y-3 border-t border-stone-100 pt-5">
+                <h3 className="text-sm md:text-base font-semibold text-stone-800 flex items-center gap-2">
+                  <Clock size={18} className="text-brand-600 md:w-5 md:h-5" />
+                  Horarios bloqueados los Sábados
+                </h3>
+                <p className="text-xs md:text-sm text-stone-500">
+                  Las horas seleccionadas aquí no estarán disponibles para agendar citas únicamente los días Sábados.
+                </p>
+                {systemSettings.blockedDaysOfWeek.includes(6) && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100/70 p-2.5 rounded-lg">
+                    Nota: El sábado está marcado como cerrado en "Días de la semana bloqueados", por lo que no se podrán agendar citas ese día de todas formas.
+                  </p>
+                )}
+                
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                  {TIME_SLOTS.map(time => {
+                    const isSelected = (systemSettings.blockedSaturdayHours || []).includes(time);
+                    return (
+                      <button
+                        key={`sat-${time}`}
+                        type="button"
+                        onClick={() => {
+                          const currentBlockedSat = systemSettings.blockedSaturdayHours || [];
+                          const updatedHours = isSelected
+                            ? currentBlockedSat.filter(h => h !== time)
+                            : [...currentBlockedSat, time];
+                          setSystemSettings({
+                            ...systemSettings,
+                            blockedSaturdayHours: updatedHours
                           });
                         }}
                         className={cn(

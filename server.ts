@@ -102,7 +102,7 @@ app.delete('/api/blocked-slots', (req, res) => {
 });
 
 app.get('/api/settings', (req, res) => {
-  const settings = readJSONFile(SETTINGS_FILE, { blockedDaysOfWeek: [], blockedHours: [] });
+  const settings = readJSONFile(SETTINGS_FILE, { blockedDaysOfWeek: [], blockedHours: [], blockedSaturdayHours: [] });
   res.json(settings);
 });
 

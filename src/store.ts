@@ -5,7 +5,7 @@ const BLOCKED_SLOTS_KEY = 'derm_blocked_slots';
 const SETTINGS_KEY = 'derm_settings';
 
 export const TIME_SLOTS = [
-  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
 ];
 
 // Helper functions for localStorage fallback
@@ -101,13 +101,26 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
   try {
     const res = await fetch('/api/settings');
     if (res.ok) {
-      return await res.json();
+      const settings = await res.json();
+      return {
+        blockedDaysOfWeek: settings.blockedDaysOfWeek || [],
+        blockedHours: settings.blockedHours || [],
+        blockedSaturdayHours: settings.blockedSaturdayHours || [],
+      };
     }
   } catch (e) {
     // Fallback
   }
   const data = localStorage.getItem(SETTINGS_KEY);
-  return data ? JSON.parse(data) : { blockedDaysOfWeek: [], blockedHours: [] };
+  if (data) {
+    const settings = JSON.parse(data);
+    return {
+      blockedDaysOfWeek: settings.blockedDaysOfWeek || [],
+      blockedHours: settings.blockedHours || [],
+      blockedSaturdayHours: settings.blockedSaturdayHours || [],
+    };
+  }
+  return { blockedDaysOfWeek: [], blockedHours: [], blockedSaturdayHours: [] };
 };
 
 export const saveSystemSettings = async (settings: SystemSettings): Promise<void> => {
